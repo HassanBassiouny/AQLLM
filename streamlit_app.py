@@ -20,6 +20,12 @@ st.markdown("""
         text-align: center;
         margin-bottom: 2rem;
     }
+    .sub-header {
+        font-size: 1.5rem;
+        color: #2e86ab;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
     .success-box {
         background-color: #d4edda;
         color: #155724;
@@ -51,6 +57,8 @@ st.markdown("""
         background-color: #f9f9f9;
         max-height: 400px;
         overflow-y: auto;
+        margin: 0 auto;
+        max-width: 800px;
     }
     .user-message {
         background-color: #007bff;
@@ -70,6 +78,22 @@ st.markdown("""
         margin: 0.5rem 0;
         text-align: left;
         max-width: 80%;
+    }
+    .center-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+    .quick-questions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+    }
+    .stButton button {
+        width: 100%;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -197,6 +221,11 @@ class AirQualityChatbot:
                 "I can help you with: region information, pollutant data, data sources, connection status, and general air quality questions.",
                 "Ask me about: monitored regions, pollutants, data sources, or specific air quality metrics.",
                 "I can provide information about Egyptian air quality regions, pollutants, data collection methods, and current readings."
+            ],
+            "status": [
+                "The air quality monitoring system is operational and collecting data from all 8 regions across Egypt.",
+                "All systems are running normally with continuous data collection from our environmental sensors.",
+                "The monitoring network is active and providing real-time air quality data from throughout Egypt."
             ]
         }
     
@@ -220,6 +249,10 @@ class AirQualityChatbot:
         elif any(word in user_input for word in ['data', 'source', 'where data', 'how collect']):
             return self.responses["data_source"][0]
         
+        # Status query
+        elif any(word in user_input for word in ['status', 'system', 'operational', 'working']):
+            return self.responses["status"][0]
+        
         # Help query
         elif any(word in user_input for word in ['help', 'what can you do', 'support']):
             return self.responses["help"][0]
@@ -231,136 +264,32 @@ class AirQualityChatbot:
         
         # Default response
         else:
-            return "I'm not sure I understand. Try asking about regions, pollutants, data sources, or type 'help' for assistance."
+            return "I'm not sure I understand. Try asking about regions, pollutants, data sources, system status, or type 'help' for assistance."
 
 def main():
     st.markdown('<h1 class="main-header">🇪🇬 Egypt Air Quality - Real Database</h1>', unsafe_allow_html=True)
-    st.markdown("### 🔗 Connected to Azure Synapse - Live Environmental Data")
+    st.markdown('<h2 class="sub-header">🔗 Connected to Azure Synapse - Live Environmental Data</h2>', unsafe_allow_html=True)
     
     # Initialize database connection and chatbot
     db = SynapseConnection()
     chatbot = AirQualityChatbot(db)
     
-    # Sidebar
-    st.sidebar.header("🎛️ Control Panel")
+    # Main content - Centered chatbot
+    st.markdown("---")
     
-    # Database connection section
-    st.sidebar.subheader("🔌 Database Connection")
-    
-    if st.sidebar.button("🧪 Test Database Connection", use_container_width=True):
-        with st.spinner("Testing connection to Azure Synapse..."):
-            success, message = db.test_connection()
-            if success:
-                st.sidebar.markdown(f'<div class="success-box">{message}</div>', unsafe_allow_html=True)
-            else:
-                st.sidebar.markdown(f'<div class="warning-box">{message}</div>', unsafe_allow_html=True)
-    
-    st.sidebar.markdown("---")
-    
-    # Analysis controls
-    region = st.sidebar.selectbox(
-        "📍 Select Region", 
-        ["All Regions"] + EGYPT_REGIONS
-    )
-    
-    days = st.sidebar.slider("📅 Analysis Period (Days)", 1, 90, 30)
-    
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🔧 Using pyodbc")
-    st.sidebar.markdown("""
-    **More reliable for Azure Synapse:**
-    - Better ODBC driver support
-    - Enterprise-grade connectivity
-    - Enhanced error handling
-    """)
-    
-    # Main content - Two columns layout
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        # Air Quality Dashboard
-        st.subheader("Real Environmental Data from Azure Synapse")
+    # Centered container for chatbot
+    with st.container():
+        st.markdown('<div class="center-container">', unsafe_allow_html=True)
         
-        if st.button("🚀 Query Real Database", type="primary", use_container_width=True):
-            with st.spinner("Fetching real-time data from Azure Synapse..."):
-                data_df = db.get_air_quality_data(region, days)
-                
-                if not data_df.empty:
-                    st.markdown(f'<div class="success-box">✅ Successfully retrieved data for {len(data_df)} regions</div>', unsafe_allow_html=True)
-                    
-                    # Display summary
-                    st.subheader("📈 Summary Metrics")
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        st.metric("Regions", len(data_df))
-                    with col2:
-                        avg_pm25 = data_df['PM2_5'].mean()
-                        st.metric("Avg PM2.5", f"{avg_pm25:.1f} μg/m³")
-                    with col3:
-                        avg_temp = data_df['Temperature'].mean()
-                        st.metric("Avg Temperature", f"{avg_temp:.1f} °C")
-                    with col4:
-                        total_readings = data_df['Readings'].sum()
-                        st.metric("Total Readings", f"{total_readings:,}")
-                    
-                    # Display data
-                    st.subheader("📋 Detailed Data")
-                    st.dataframe(data_df, use_container_width=True)
-                    
-                    # Create visualizations
-                    st.subheader("📊 Visualizations")
-                    
-                    if region == "All Regions":
-                        # Comparison chart
-                        fig1 = px.bar(
-                            data_df,
-                            x='Region',
-                            y='PM2_5',
-                            title=f"PM2.5 Levels by Region (Last {days} days)",
-                            color='PM2_5',
-                            color_continuous_scale=['green', 'yellow', 'red']
-                        )
-                        st.plotly_chart(fig1, use_container_width=True)
-                        
-                        # Multi-metric chart
-                        fig2 = px.bar(
-                            data_df,
-                            x='Region',
-                            y=['PM2_5', 'Temperature'],
-                            title=f"Environmental Comparison (Last {days} days)",
-                            barmode='group'
-                        )
-                        st.plotly_chart(fig2, use_container_width=True)
-                    else:
-                        # Single region focus
-                        fig = px.bar(
-                            data_df,
-                            x='Region',
-                            y=['PM2_5', 'PM10', 'NO2'],
-                            title=f"Pollutant Levels in {region} (Last {days} days)",
-                            barmode='group'
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-                    
-                else:
-                    st.markdown('<div class="warning-box">❌ No data returned from database</div>', unsafe_allow_html=True)
-                    st.markdown("""
-                    **Possible issues:**
-                    1. Check database credentials in Secrets
-                    2. Verify table exists: `dbo.IoT_AirQuality`
-                    3. Ensure data exists for selected period
-                    4. Check network connectivity
-                    """)
-    
-    with col2:
         # Chatbot Section
-        st.subheader("💬 Air Quality Assistant")
-        st.markdown("Ask me about air quality data, regions, or pollutants!")
+        st.markdown("### 💬 Air Quality Assistant")
+        st.markdown("Ask me about air quality data, regions, pollutants, or system status!")
         
         # Initialize chat history
         if "messages" not in st.session_state:
-            st.session_state.messages = []
+            st.session_state.messages = [
+                {"role": "bot", "content": "Hello! I'm your Egypt Air Quality assistant. How can I help you today?"}
+            ]
         
         # Display chat messages
         chat_container = st.container()
@@ -374,67 +303,74 @@ def main():
             st.markdown('</div>', unsafe_allow_html=True)
         
         # Chat input
-        user_input = st.text_input("Type your message:", placeholder="Ask about air quality...", key="chat_input")
-        
-        if st.button("Send", key="send_button") and user_input:
-            # Add user message to chat history
-            st.session_state.messages.append({"role": "user", "content": user_input})
-            
-            # Get bot response
-            bot_response = chatbot.get_response(user_input)
-            st.session_state.messages.append({"role": "bot", "content": bot_response})
-            
-            # Rerun to update chat display
-            st.rerun()
-        
-        # Quick action buttons
-        st.markdown("**Quick Questions:**")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if st.button("Regions 📍", use_container_width=True):
-                st.session_state.messages.append({"role": "user", "content": "What regions do you monitor?"})
-                bot_response = chatbot.get_response("regions")
-                st.session_state.messages.append({"role": "bot", "content": bot_response})
-                st.rerun()
-            
-            if st.button("Pollutants 🌫️", use_container_width=True):
-                st.session_state.messages.append({"role": "user", "content": "What pollutants do you measure?"})
-                bot_response = chatbot.get_response("pollutants")
-                st.session_state.messages.append({"role": "bot", "content": bot_response})
-                st.rerun()
-        
+        col1, col2, col3 = st.columns([3, 1, 3])
         with col2:
-            if st.button("Data Source 📊", use_container_width=True):
-                st.session_state.messages.append({"role": "user", "content": "Where does the data come from?"})
-                bot_response = chatbot.get_response("data source")
-                st.session_state.messages.append({"role": "bot", "content": bot_response})
-                st.rerun()
+            user_input = st.text_input("Type your message:", placeholder="Ask about air quality...", key="chat_input", label_visibility="collapsed")
             
-            if st.button("Connection 🔌", use_container_width=True):
-                st.session_state.messages.append({"role": "user", "content": "Check database connection"})
-                bot_response = chatbot.get_response("connection")
+            if st.button("Send", key="send_button", use_container_width=True) and user_input:
+                # Add user message to chat history
+                st.session_state.messages.append({"role": "user", "content": user_input})
+                
+                # Get bot response
+                bot_response = chatbot.get_response(user_input)
                 st.session_state.messages.append({"role": "bot", "content": bot_response})
+                
+                # Rerun to update chat display
                 st.rerun()
         
-        # Clear chat button
-        if st.button("Clear Chat 🗑️", use_container_width=True):
-            st.session_state.messages = []
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Quick action buttons - Centered
+    st.markdown("### Quick Questions")
+    st.markdown('<div class="quick-questions">', unsafe_allow_html=True)
+    
+    col1, col2, col3, col4, col5 = st.columns(5)
+    
+    with col1:
+        if st.button("📍 Regions", use_container_width=True):
+            st.session_state.messages.append({"role": "user", "content": "What regions do you monitor?"})
+            bot_response = chatbot.get_response("regions")
+            st.session_state.messages.append({"role": "bot", "content": bot_response})
             st.rerun()
     
-    # Connection info
-    with st.expander("🔧 Connection Details"):
-        st.markdown("""
-        **Using pyodbc with ODBC Driver 17 for SQL Server**
-        
-        **Required Secrets:**
-        ```toml
-        SYNAPSE_SERVER = "iotsynaps.sql.azuresynapse.net"
-        SYNAPSE_DATABASE = "your-database-name"
-        SYNAPSE_USERNAME = "your-username"
-        SYNAPSE_PASSWORD = "your-password"
-        ```
-        """)
+    with col2:
+        if st.button("🌫️ Pollutants", use_container_width=True):
+            st.session_state.messages.append({"role": "user", "content": "What pollutants do you measure?"})
+            bot_response = chatbot.get_response("pollutants")
+            st.session_state.messages.append({"role": "bot", "content": bot_response})
+            st.rerun()
+    
+    with col3:
+        if st.button("📊 Data Source", use_container_width=True):
+            st.session_state.messages.append({"role": "user", "content": "Where does the data come from?"})
+            bot_response = chatbot.get_response("data source")
+            st.session_state.messages.append({"role": "bot", "content": bot_response})
+            st.rerun()
+    
+    with col4:
+        if st.button("🔌 Connection", use_container_width=True):
+            st.session_state.messages.append({"role": "user", "content": "Check database connection"})
+            bot_response = chatbot.get_response("connection")
+            st.session_state.messages.append({"role": "bot", "content": bot_response})
+            st.rerun()
+    
+    with col5:
+        if st.button("🔄 Status", use_container_width=True):
+            st.session_state.messages.append({"role": "user", "content": "What's the system status?"})
+            bot_response = chatbot.get_response("status")
+            st.session_state.messages.append({"role": "bot", "content": bot_response})
+            st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Clear chat button - Centered
+    col1, col2, col3 = st.columns([3, 1, 3])
+    with col2:
+        if st.button("🗑️ Clear Chat", use_container_width=True):
+            st.session_state.messages = [
+                {"role": "bot", "content": "Hello! I'm your Egypt Air Quality assistant. How can I help you today?"}
+            ]
+            st.rerun()
     
     # Footer
     st.markdown("---")
