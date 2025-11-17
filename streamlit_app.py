@@ -7,7 +7,7 @@ import pyodbc
 import os
 
 st.set_page_config(
-    page_title="Egypt Air Quality - Real Database",
+    page_title="Egypt Air Quality",
     page_icon="🇪🇬",
     layout="wide"
 )
@@ -144,8 +144,8 @@ class SynapseConnection:
             return pd.DataFrame()
 
 def main():
-    st.markdown('<h1 class="main-header">🇪🇬 Egypt Air Quality - Real Database</h1>', unsafe_allow_html=True)
-    st.markdown("### 🔗 Connected to Azure Synapse - Live Environmental Data")
+    st.markdown('<h1 class="main-header">🇪🇬 Egypt Air Quality</h1>', unsafe_allow_html=True)
+  
     
     # Initialize database connection
     db = SynapseConnection()
@@ -163,7 +163,7 @@ def main():
     
     
     # Main content
-    st.subheader("Real Environmental Data from Azure Synapse")
+    st.subheader("Egypt Air Quality")
     
     if st.button("🚀 Query Real Database", type="primary", use_container_width=True):
         with st.spinner("Fetching real-time data from Azure Synapse..."):
