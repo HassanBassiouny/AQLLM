@@ -152,20 +152,7 @@ def main():
     
     # Sidebar
     st.sidebar.header("🎛️ Control Panel")
-    
-    # Database connection section
-    st.sidebar.subheader("🔌 Database Connection")
-    
-    if st.sidebar.button("🧪 Test Database Connection", use_container_width=True):
-        with st.spinner("Testing connection to Azure Synapse..."):
-            success, message = db.test_connection()
-            if success:
-                st.sidebar.markdown(f'<div class="success-box">{message}</div>', unsafe_allow_html=True)
-            else:
-                st.sidebar.markdown(f'<div class="warning-box">{message}</div>', unsafe_allow_html=True)
-    
-    st.sidebar.markdown("---")
-    
+        
     # Analysis controls
     region = st.sidebar.selectbox(
         "📍 Select Region", 
