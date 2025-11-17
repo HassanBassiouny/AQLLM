@@ -174,14 +174,6 @@ def main():
     
     days = st.sidebar.slider("📅 Analysis Period (Days)", 1, 90, 30)
     
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🔧 Using pyodbc")
-    st.sidebar.markdown("""
-    **More reliable for Azure Synapse:**
-    - Better ODBC driver support
-    - Enterprise-grade connectivity
-    - Enhanced error handling
-    """)
     
     # Main content
     st.subheader("Real Environmental Data from Azure Synapse")
